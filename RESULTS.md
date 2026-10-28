@@ -157,3 +157,104 @@ Usage-volume and support-interaction features, a time-series version
 snapshot), and a real cost-benefit model for the lift table (cost per
 retention call x estimated save-rate) to turn "catches 50% of churners"
 into an actual ROI number.
+
+---
+
+## 9. Add-on: do you even need an LLM for this? (cost/accuracy tradeoff)
+
+A natural question in 2026 is "why not just ask an LLM?" So I measured
+it, on the exact same 200-customer stratified sample of the held-out test
+set, rather than assuming an answer either way. Code: `src/llm_baseline.py`,
+`run_llm_comparison.py`. Model: `openai/gpt-oss-20b` via Groq (chosen
+because `llama-3.1-8b-instant` moved to enterprise/contact-sales pricing
+in late 2026; gpt-oss-20b is Groq's current cheapest self-serve,
+production model). Each customer was serialized into a plain-English
+profile (no engineered features, just the raw account facts) and the LLM
+was asked for a single churn-probability number, under two prompting
+strategies: zero-shot, and few-shot (6 labeled examples from TRAIN only).
+
+### The numbers (same 200 customers, every approach)
+
+| Approach | Accuracy | F1 | ROC-AUC | PR-AUC | Latency/prediction | Cost/1,000 predictions |
+|---|---|---|---|---|---|---|
+| **Random Forest (classical)** | **73.0%** | 59.7% | **80.8%** | **60.9%** | **47.5ms** | **$0 (local)** |
+| LLM, zero-shot | 71.0% | 45.3% | 71.2% | 41.2% | 506ms | $0.038 (~$38/1M) |
+| LLM, few-shot | 63.0% | 53.2% | 73.2% | 42.2% | 520ms | $0.097 (~$97/1M) |
+
+See `reports/figures/llm_vs_classical_comparison.png` and
+`reports/llm_vs_classical_comparison.json` for the full numbers.
+
+### The verdict
+
+**No, an LLM is not worth it for this task.** The classical model, which
+already existed and runs for ~$0 marginal cost, beats both LLM
+configurations on every ranking metric (ROC-AUC, PR-AUC) and on raw
+accuracy, while being roughly **11x faster per prediction** and
+**1,000x+ cheaper at any real volume** (~$38-97 per million predictions
+via API vs. effectively free locally). This isn't a surprising result in
+hindsight — churn prediction from 19 structured fields is exactly the
+regime classical ML was built for, and there was no reason to expect an
+LLM to out-model a purpose-built Random Forest here. The value of doing
+this measurement wasn't the direction of the answer, it was replacing an
+assumption with a number.
+
+### The more interesting finding: *why*, not just *that*
+
+- **Few-shot made ranking better but accuracy worse.** Going from
+  zero-shot to few-shot raised ROC-AUC (71.2% -> 73.2%) and F1
+  (45.3% -> 53.2%), but *dropped* accuracy (71.0% -> 63.0%). Looking at
+  the per-customer outputs explains it: recall jumped from 45.3% to
+  79.2% while precision fell (45.3% -> 40.0%) -- few-shot made the model
+  predict "churn" far more aggressively, catching more true churners but
+  at the cost of many more false alarms. A single metric would have
+  hidden this trade-off entirely.
+- **The few-shot examples appear to have anchored the model's outputs,
+  not calibrated them.** My 6 few-shot examples used representative
+  probabilities of 85 (churn) and 10 (stay) as labels. Inspecting raw
+  responses (`reports/llm_predictions_few_shot.csv`), a surprising number
+  of *different* customer profiles got probabilities suspiciously close
+  to those exact anchors (e.g. five consecutive real outputs: 5, 80, 90,
+  80, 80) rather than smoothly varying with each profile's actual risk
+  factors. That's a concrete, measured instance of a known LLM few-shot
+  failure mode -- numeric anchoring -- not a vague claim about it.
+- **`gpt-oss-20b` is a reasoning model, and that's an invisible cost
+  driver.** At Groq's default ("medium") reasoning effort, a test call
+  spent 89 of its 106 completion tokens (84%) on hidden chain-of-thought
+  before the visible one-line answer. I switched to `reasoning_effort=
+  "low"` for the full run to keep cost/latency sane -- and separately
+  found that `"high"` effort burned an entire 300-token budget on
+  reasoning alone without ever emitting a parseable answer. For a task
+  this simple, a reasoning model's cost (and even its ability to answer
+  at all) depends on a configuration knob that has nothing to do with
+  the actual decision logic -- a real operational risk a classical model
+  simply doesn't have.
+- **The LLM run hit real rate limits.** The run log shows frequent `429`
+  responses from Groq's free tier, handled by the retry/backoff already
+  built into `call_groq()` (0% final parse failures). That's a genuine
+  extra layer of operational fragility -- external dependency, retries,
+  backoff -- that a model running in-process simply does not have.
+
+### Honest caveats on this add-on
+
+- n=200, one stratified sample, one model, one provider, two prompt
+  styles -- not a general "LLMs vs. classical ML" claim, a measurement
+  of *this* task under *these* conditions.
+- A larger/more capable model (e.g. a 70B+ model, or a frontier model
+  like GPT-4o or Claude) might narrow or reverse the accuracy gap; it
+  would also cost more per call, likely making the cost gap worse, not
+  better -- the core cost argument would still hold.
+- Prompt engineering wasn't deeply iterated (one zero-shot, one few-shot
+  variant) -- a more carefully tuned prompt, better-chosen few-shot
+  examples, or structured-output mode could plausibly close some of the
+  accuracy gap. I'd treat this as a reasonable first measurement, not
+  the ceiling of what's possible.
+
+### Pre-answered: "why does this matter for an AI CoE role?"
+
+Because the job isn't "use an LLM for everything" -- it's knowing when
+not to. This add-on is a small, honest demonstration of that judgment:
+I didn't assume the fancier tool was better or worse, I measured
+accuracy, cost, and latency on the same data and let the numbers make
+the call. The answer here (classical wins, LLMs lose on every axis) will
+not always be the answer for every task -- and showing I can run this
+comparison, not just cite a hot take, is the actual point.

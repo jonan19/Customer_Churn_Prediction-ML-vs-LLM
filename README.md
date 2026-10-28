@@ -88,13 +88,35 @@ customer-churn-prediction/
     data_pipeline.py    # load + clean (the TotalCharges fix lives here)
     features.py          # feature engineering + encoding prep
     modeling.py          # model definitions, CV comparison, final eval
-    error_analysis.py   # importance, confusion matrix, lift table
+    error_analysis.py   # importance, confusion matrix, lift table, LLM comparison plot
+    llm_baseline.py      # LLM add-on: prompts, Groq API client, cost tracking
   tests/
     test_pipeline.py     # data-quality + split correctness tests
+    test_llm_baseline.py # prompt/parsing/cost-math tests (no API key needed)
   reports/               # generated: metrics, CV table, lift table, figures
   run_pipeline.py        # single entry point, end to end
+  run_llm_comparison.py  # add-on: LLM vs. classical cost/accuracy comparison
   RESULTS.md             # numeric results + interview talking points
   requirements.txt       # pinned versions
+```
+
+## Add-on: do you even need an LLM for this?
+
+`run_llm_comparison.py` answers a question worth asking honestly rather
+than assuming: given the classical model above already works, is it
+worth replacing with an LLM? It serializes the same held-out test
+customers into plain-English profiles, asks an LLM (`openai/gpt-oss-20b`
+via Groq) for a churn probability under zero-shot and few-shot prompting,
+and compares accuracy, latency, and real API cost against the classical
+model on the *exact same* customers. Short answer: no -- the classical
+model wins on every ranking metric, is ~11x faster, and costs ~$0 vs.
+~$38-97 per million predictions. The more interesting part is *why* (a
+few-shot numeric-anchoring effect, and a reasoning model's hidden
+chain-of-thought token cost) -- full writeup in `RESULTS.md` section 9.
+
+```bash
+$env:GROQ_API_KEY = "your-key-here"   # PowerShell; needs a Groq API key
+python run_llm_comparison.py
 ```
 
 ## Setup & reproduction
