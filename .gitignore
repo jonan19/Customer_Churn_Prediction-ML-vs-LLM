@@ -7,3 +7,4 @@ reports/figures/*.png
 .pytest_cache/
 *_run.log
 data/processed/
+.streamlit/secrets.toml

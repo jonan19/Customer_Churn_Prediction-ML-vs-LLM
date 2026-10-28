@@ -90,13 +90,24 @@ customer-churn-prediction/
     modeling.py          # model definitions, CV comparison, final eval
     error_analysis.py   # importance, confusion matrix, lift table, LLM comparison plot
     llm_baseline.py      # LLM add-on: prompts, Groq API client, cost tracking
+    calibration_analysis.py  # Brier score, ECE, reliability diagrams
+    shap_analysis.py          # per-customer SHAP explanations
+    roi_simulator.py          # lift table -> real (assumption-labeled) dollars
+    survival_analysis.py      # Kaplan-Meier + Cox Proportional Hazards
   tests/
     test_pipeline.py     # data-quality + split correctness tests
     test_llm_baseline.py # prompt/parsing/cost-math tests (no API key needed)
+    test_calibration_and_roi.py  # ECE/Brier/ROI arithmetic tests
   reports/               # generated: metrics, CV table, lift table, figures
   run_pipeline.py        # single entry point, end to end
   run_llm_comparison.py  # add-on: LLM vs. classical cost/accuracy comparison
+  run_calibration_analysis.py  # add-on: calibration study
+  run_shap_analysis.py          # add-on: SHAP explainability
+  run_roi_simulation.py         # add-on: ROI simulator
+  run_survival_analysis.py      # add-on: survival analysis
+  app.py                  # interactive Streamlit demo
   RESULTS.md             # numeric results + interview talking points
+  IDEAS.md               # brainstormed future extensions (built ones marked)
   requirements.txt       # pinned versions
 ```
 
@@ -117,6 +128,34 @@ chain-of-thought token cost) -- full writeup in `RESULTS.md` section 9.
 ```bash
 $env:GROQ_API_KEY = "your-key-here"   # PowerShell; needs a Groq API key
 python run_llm_comparison.py
+```
+
+## Four further analyses + an interactive demo
+
+- **Calibration** (`run_calibration_analysis.py`) -- is a predicted 70%
+  churn probability actually ~70% in reality? Compares Brier score and
+  Expected Calibration Error across classical/zero-shot/few-shot.
+- **SHAP explainability** (`run_shap_analysis.py`) -- per-customer
+  "why did the model flag *this* person" waterfall plots, on top of the
+  global feature importance already in `error_analysis.py`.
+- **ROI simulator** (`run_roi_simulation.py`) -- turns the lift table
+  into real (assumption-labeled) dollars, and compares the model's
+  ranking against random targeting at a realistic fixed call budget.
+- **Survival analysis** (`run_survival_analysis.py`) -- reframes "will
+  they churn" as "when will they churn" (Kaplan-Meier + Cox Proportional
+  Hazards), a genuinely different modeling paradigm from everything else
+  in this repo.
+- **Interactive demo** (`app.py`, Streamlit) -- type in any customer
+  profile, see the classical model's live prediction + SHAP explanation
+  next to a live LLM call, with real measured latency/cost for each; a
+  second tab browses every figure from this whole project.
+
+Full numbers and the two most interesting findings (calibration beats
+ranking in an unexpected direction; the Cox model's concordance index
+edges out the classifier's ROC-AUC) are in `RESULTS.md` section 10.
+
+```bash
+streamlit run app.py   # needs GROQ_API_KEY for the live LLM side (sidebar prompt if unset)
 ```
 
 ## Setup & reproduction

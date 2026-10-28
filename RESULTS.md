@@ -257,4 +257,150 @@ I didn't assume the fancier tool was better or worse, I measured
 accuracy, cost, and latency on the same data and let the numbers make
 the call. The answer here (classical wins, LLMs lose on every axis) will
 not always be the answer for every task -- and showing I can run this
+
+---
+
+## 10. Four further analyses (calibration, SHAP, ROI, survival)
+
+Built after the core project + LLM comparison, from `IDEAS.md`. Code:
+`src/calibration_analysis.py`, `src/shap_analysis.py`,
+`src/roi_simulator.py`, `src/survival_analysis.py`, each with its own
+`run_*.py` entry point and real output in `reports/`.
+
+### 10.1 Calibration: is "70% risk" actually 70%?
+
+Ranking metrics (ROC-AUC, PR-AUC) say nothing about whether a predicted
+probability is meaningful on its own. Checked it, on the same
+200-customer sample as the LLM comparison:
+
+| Approach | Brier score (lower better) | ECE (lower better) |
+|---|---|---|
+| Random Forest (classical) | **0.177** (vs. 0.195 naive floor) | 0.147 |
+| LLM, zero-shot | 0.188 | **0.103** |
+| LLM, few-shot | 0.263 (worse than the naive floor) | 0.242 |
+
+The genuinely interesting, non-obvious result: **the classical model
+has the best Brier score, but the LLM (zero-shot) is actually
+better-calibrated by ECE**, despite ranking worse overall (lower
+ROC-AUC/PR-AUC, see section 9). Discrimination (can it rank churners
+above non-churners) and calibration (does "70%" mean 70%) are different
+properties, and a model can win on one while losing on the other --
+RF's advantage here is entirely in ranking, not in probability
+trustworthiness. Few-shot's calibration is badly broken (ECE 0.242,
+worse Brier than just guessing the base rate every time), consistent
+with the numeric-anchoring effect from section 9: its outputs cluster
+near the few-shot examples' anchor values rather than reflecting each
+customer's actual risk. Caveat: n=200 with 10 bins is a small sample for
+a reliability diagram (a few bins have very few points, see
+`reports/figures/calibration_reliability_diagram.png`) -- treat the
+direction of these results as solid, the exact ECE values as approximate.
+
+### 10.2 SHAP: per-customer, not just global, explanations
+
+Permutation importance (section 6) says what matters on average; SHAP
+(`shap.TreeExplainer`, exact for tree models) says what mattered for
+*this one customer's* prediction. Global ranking matches the earlier
+permutation importance closely (top feature: `is_month_to_month`, mean
+|SHAP| 0.059, followed by `Contract_Month-to-month` 0.059 and
+`InternetService_Fiber_optic` 0.040) -- a good cross-check that the two
+independent methods agree. The new part is per-customer waterfall plots
+(`reports/figures/shap_waterfall_*.png`): for the "surprise churner"
+case from section 6's misclassification breakdown (31-month tenure, DSL,
+moderate charges), SHAP shows every one of their individual factors
+pushing the prediction *down* from the 0.499 base rate to 0.267 --
+concretely showing the model had good reasons to predict "stays," and
+that reasoning was simply wrong for this specific person, not a model bug.
+
+### 10.3 ROI simulator: closing the "is this worth it" gap
+
+Section 7 flagged that the lift table shows what the model *could*
+catch, not real dollars. With documented assumptions ($15/call,
+30% of contacted churners actually retained, 12 months of their
+MonthlyCharges counted as revenue saved -- swap these for real figures,
+they're not in the dataset):
+
+- **Unconstrained optimum:** contact the riskiest 76% of customers ->
+  net value **$69,301** (catches 370/374 churners). At these assumed
+  economics (expected value per call is positive down to a churn
+  probability of ~6.5%), almost any contact is profitable, which makes
+  the unconstrained optimum a less interesting number than...
+- **...the realistic, budget-constrained case.** A retention team
+  rarely has an unlimited calling budget. Compared the model's ranking
+  against calling customers in random order, at three fixed budgets:
+
+| Budget | Model net value | Random net value | Model's value-add |
+|---|---|---|---|
+| Top 10% | $22,111 | $6,520 | **+$15,591** |
+| Top 20% | $39,145 | $13,040 | **+$26,105** |
+| Top 30% | $50,874 | $19,560 | **+$31,313** |
+
+This is the number that actually answers "is the model worth it": at a
+realistic fixed budget, good ranking is worth tens of thousands of
+dollars over no model at all -- a sharper, more honest framing than the
+unconstrained optimum, which mostly says "the assumed economics favor
+calling almost everyone" rather than anything about the model's skill.
+
+### 10.4 Survival analysis: a different modeling paradigm entirely
+
+Reframed the problem from "will this customer churn" (binary) to "how
+long until they churn" (time-to-event), treating still-active customers
+as right-censored. Kaplan-Meier survival curves by contract type
+(`reports/figures/survival_km_by_contract.png`) show the starkest
+visual in the whole project: two-year contract customers have ~94%
+estimated survival probability even out at 72 months, one-year sits
+around ~65%, and month-to-month customers fall to barely ~13% -- the
+same "contract type dominates" finding as everywhere else in this
+project, but visualized as an actual survival curve rather than a
+feature-importance bar.
+
+A **Cox Proportional Hazards model** (fit on TRAIN, evaluated on the
+same held-out TEST split used everywhere else) gets a **concordance
+index of 0.890** -- survival analysis's analog of ROC-AUC, and notably
+higher than the classical binary model's 0.844 ROC-AUC on the same
+split (not a strictly fair comparison -- different target framing,
+different information used -- but a sign the time-to-event framing
+captures real structure). Hazard ratios are directly interpretable:
+a two-year contract multiplies instantaneous churn hazard by **0.35**
+(65% lower risk) relative to the reference category, one-year by 0.51,
+having online security by 0.67, having a partner by 0.74 -- all with
+p < 0.0001 (`reports/cox_hazard_ratios.csv` has the full table).
+Fiber-optic internet raises hazard by 1.60x, consistent with every
+other analysis in this project pointing at the same feature.
+
+### 10.5 Interactive demo (`app.py`, Streamlit)
+
+Type in any customer profile and see, side by side, in real time: the
+classical model's prediction + its top SHAP factors (local inference,
+~tens of milliseconds, $0), and a live `openai/gpt-oss-20b` call via
+Groq (zero-shot) with its actual measured latency and cost for that one
+call. A second tab browses every static figure from this whole project
+(calibration, SHAP, ROI, survival, the LLM comparison) without rerunning
+anything. Run locally with `streamlit run app.py`; needs `GROQ_API_KEY`
+as an environment variable, a Streamlit secret, or typed into the
+sidebar for that session only (never written to disk by the app).
+
+### Pre-answered: new interview questions this section opens up
+
+**"What's the difference between a model being accurate and being
+calibrated?"** Walk through 10.1 directly -- RF ranks better (higher
+ROC-AUC/PR-AUC) but is *less* calibrated by ECE than the zero-shot LLM.
+A model can nail one property and not the other; which one matters
+depends on whether you use the output to rank (accuracy/ranking is
+what matters) or to compute something with the raw probability, like
+expected cost (calibration is what matters).
+
+**"Why Cox regression instead of just more binary classification
+metrics?"** Because `tenure` + `Churn` is a textbook right-censored
+survival setup already sitting in this dataset, and framing it that way
+answers a question binary classification can't: not just *whether* a
+customer is likely to churn, but *when* -- useful for prioritizing
+outreach by urgency, not just risk.
+
+**"The ROI number changes a lot based on your assumptions -- so what's
+the point?"** The point isn't the specific dollar figure (clearly
+labeled as assumptions, not data), it's the *mechanism*: showing the
+model's ranking is worth something concrete under a realistic budget
+constraint (section 10.3's model-vs-random comparison), and that the
+mechanism generalizes to real figures if a real retention team's costs
+and success rates were plugged in.
 comparison, not just cite a hot take, is the actual point.
