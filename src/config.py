@@ -34,3 +34,26 @@ SERVICE_COLUMNS = [
 
 TENURE_BUCKET_EDGES = [-1, 12, 24, 48, 60, 1000]
 TENURE_BUCKET_LABELS = ["0-12mo", "13-24mo", "25-48mo", "49-60mo", "61mo+"]
+
+# ---- LLM cost/accuracy comparison (add-on) --------------------------------
+# llama-3.1-8b-instant moved to Groq's enterprise/contact-sales tier as of
+# Oct 2026; openai/gpt-oss-20b is the current cheapest self-serve,
+# production (non-preview) model on GroqCloud. Pricing verified against
+# console.groq.com/docs/models at the time this was written -- re-check
+# before relying on this number for a real budget decision.
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+LLM_MODEL = "openai/gpt-oss-20b"
+LLM_PRICE_PER_1M_INPUT_TOKENS = 0.075
+LLM_PRICE_PER_1M_OUTPUT_TOKENS = 0.30
+
+LLM_SAMPLE_SIZE = 200       # stratified subsample of the test set, to bound API cost/time
+LLM_FEWSHOT_PER_CLASS = 3   # few-shot examples per class, drawn from TRAIN only
+
+# openai/gpt-oss-20b is a REASONING model: most of its completion tokens
+# go to a hidden chain-of-thought, not the visible answer (measured: ~60%
+# of output tokens at "medium" effort, the API default). "low" keeps the
+# comparison's cost/latency realistic for a task this simple; "high" was
+# tested and burned a 300-token budget on reasoning alone without ever
+# emitting a final answer -- itself a finding worth reporting.
+LLM_REASONING_EFFORT = "low"
+LLM_MAX_TOKENS = 150

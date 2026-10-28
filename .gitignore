@@ -5,5 +5,5 @@ venv/
 reports/figures/*.png
 *.egg-info/
 .pytest_cache/
-pipeline_run.log
+*_run.log
 data/processed/
