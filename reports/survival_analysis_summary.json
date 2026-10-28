@@ -1,0 +1,6 @@
+{
+  "median_survival_time_months": null,
+  "cox_concordance_index_test": 0.8902623549936747,
+  "n_train": 5634,
+  "n_test": 1409
+}
