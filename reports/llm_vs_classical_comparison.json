@@ -1,0 +1,42 @@
+{
+  "sample_size": 200,
+  "sample_churn_rate": 0.265,
+  "classical_random_forest": {
+    "accuracy": 0.73,
+    "precision": 0.49382716049382713,
+    "recall": 0.7547169811320755,
+    "f1": 0.5970149253731343,
+    "roc_auc": 0.8083686304710563,
+    "pr_auc": 0.6091653694124377,
+    "mean_latency_sec": 0.04753030200001376,
+    "cost_per_1000_predictions_usd": 0.0
+  },
+  "llm_zero_shot": {
+    "accuracy": 0.71,
+    "precision": 0.4528301886792453,
+    "recall": 0.4528301886792453,
+    "f1": 0.4528301886792453,
+    "roc_auc": 0.7119111795661661,
+    "pr_auc": 0.4115985975020169,
+    "total_input_tokens": 54294,
+    "total_output_tokens": 11648,
+    "total_cost_usd": 0.00756645,
+    "cost_per_1000_predictions_usd": 0.03783225,
+    "mean_latency_sec": 0.5063411629199982,
+    "parse_failure_rate": 0.0
+  },
+  "llm_few_shot": {
+    "accuracy": 0.63,
+    "precision": 0.4,
+    "recall": 0.7924528301886793,
+    "f1": 0.5316455696202531,
+    "roc_auc": 0.7321268129893467,
+    "pr_auc": 0.4216905582631738,
+    "total_input_tokens": 224094,
+    "total_output_tokens": 8419,
+    "total_cost_usd": 0.019332749999999996,
+    "cost_per_1000_predictions_usd": 0.09666374999999998,
+    "mean_latency_sec": 0.5197476434707642,
+    "parse_failure_rate": 0.0
+  }
+}

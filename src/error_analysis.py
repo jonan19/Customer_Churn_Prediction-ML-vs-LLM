@@ -105,6 +105,46 @@ def lift_table(y_true: np.ndarray, y_proba: np.ndarray, ks=(0.05, 0.10, 0.20, 0.
     return pd.DataFrame(rows)
 
 
+def plot_llm_comparison(results: dict, out_path):
+    """Grouped bar chart: classical model vs. LLM (zero-shot / few-shot)
+    across ranking metrics, plus a log-scale cost comparison."""
+    approaches = ["classical_random_forest", "llm_zero_shot", "llm_few_shot"]
+    labels = ["Random Forest\n(classical)", "LLM\n(zero-shot)", "LLM\n(few-shot)"]
+    colors = ["#2b6cb0", "#dd6b20", "#c05621"]
+    metrics = ["roc_auc", "pr_auc", "f1", "accuracy"]
+    metric_labels = ["ROC-AUC", "PR-AUC", "F1", "Accuracy"]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+    ax = axes[0]
+    x = np.arange(len(metrics))
+    width = 0.25
+    for i, approach in enumerate(approaches):
+        values = [results[approach][m] for m in metrics]
+        ax.bar(x + (i - 1) * width, values, width, label=labels[i], color=colors[i])
+    ax.set_xticks(x)
+    ax.set_xticklabels(metric_labels)
+    ax.set_ylim(0, 1)
+    ax.set_title("Accuracy metrics (same 200-customer sample)")
+    ax.legend(fontsize=8)
+
+    ax = axes[1]
+    costs = [max(results[a]["cost_per_1000_predictions_usd"], 0.0001) for a in approaches]
+    bars = ax.bar(labels, costs, color=colors)
+    ax.set_yscale("log")
+    ax.set_ylabel("Cost per 1,000 predictions (USD, log scale)")
+    ax.set_title("Cost comparison")
+    for bar, approach in zip(bars, approaches):
+        actual = results[approach]["cost_per_1000_predictions_usd"]
+        label = "$0 (local)" if actual == 0 else f"${actual:.3f}"
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), label,
+                ha="center", va="bottom", fontsize=9)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
 def misclassification_breakdown(test_df: pd.DataFrame, y_pred: np.ndarray) -> dict:
     df = test_df.copy()
     df["y_true"] = df[config.TARGET_COL].values
