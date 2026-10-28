@@ -1,0 +1,50 @@
+feature,mean_abs_shap
+num__is_month_to_month,0.05937042602308168
+cat__Contract_Month-to-month,0.058783426167247445
+cat__InternetService_Fiber optic,0.03991101181669503
+num__tenure,0.039671667839881825
+cat__OnlineSecurity_No,0.03307924740282116
+cat__TechSupport_No,0.02693276558938722
+cat__Contract_Two year,0.023449456178942195
+cat__PaymentMethod_Electronic check,0.0224481963749701
+cat__tenure_bucket_0-12mo,0.022235968083198374
+num__TotalCharges,0.02139803100899905
+num__MonthlyCharges,0.020274572576037424
+cat__InternetService_DSL,0.015745616744033776
+cat__OnlineBackup_No,0.008164171105568845
+cat__OnlineSecurity_Yes,0.008129665799386274
+num__PaperlessBilling,0.008018111340770328
+num__has_internet,0.006491868693226175
+cat__DeviceProtection_No internet service,0.0060016324934724094
+cat__TechSupport_Yes,0.005889343178653147
+cat__OnlineBackup_No internet service,0.0058335310986511475
+cat__StreamingMovies_No internet service,0.005780149044911571
+cat__tenure_bucket_61mo+,0.0056294422515329534
+cat__StreamingMovies_Yes,0.005514435100008449
+cat__StreamingTV_Yes,0.005197464120439024
+num__charge_increase_ratio,0.004979646853507466
+cat__OnlineSecurity_No internet service,0.004785377559733005
+cat__StreamingTV_No internet service,0.004744119293916769
+cat__StreamingMovies_No,0.004320776687527529
+cat__InternetService_No,0.003848582403656468
+cat__MultipleLines_Yes,0.0036967736750127354
+cat__TechSupport_No internet service,0.0036888572469762813
+cat__MultipleLines_No,0.003586767275193184
+cat__StreamingTV_No,0.0035675006326598563
+cat__Contract_One year,0.0031007107952562354
+num__Dependents,0.00289563425744399
+cat__OnlineBackup_Yes,0.0026801420499015494
+num__SeniorCitizen,0.002319843996102404
+num__num_services,0.002288888627046601
+cat__tenure_bucket_25-48mo,0.002086322792595382
+cat__PaymentMethod_Bank transfer (automatic),0.002048363716785519
+cat__PaymentMethod_Credit card (automatic),0.0019212310705951554
+cat__PaymentMethod_Mailed check,0.0019157742925907876
+num__Partner,0.0016195967711712268
+cat__gender_Male,0.001579728918795064
+num__PhoneService,0.001408630832388812
+cat__DeviceProtection_No,0.0013716623537094162
+cat__tenure_bucket_49-60mo,0.0012193444460738131
+cat__MultipleLines_No phone service,0.0009379846373623102
+cat__tenure_bucket_13-24mo,0.0008646139002244966
+cat__DeviceProtection_Yes,0.0005287280963762192

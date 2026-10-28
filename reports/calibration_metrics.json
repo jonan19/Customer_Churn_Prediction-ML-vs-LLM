@@ -1,0 +1,20 @@
+{
+  "Random Forest (classical)": {
+    "brier_score": 0.1768747826559578,
+    "naive_brier_score": 0.194775,
+    "ece": 0.14694115831541166,
+    "n": 200
+  },
+  "LLM (zero-shot)": {
+    "brier_score": 0.18808749999999996,
+    "naive_brier_score": 0.194775,
+    "ece": 0.10324999999999995,
+    "n": 200
+  },
+  "LLM (few-shot)": {
+    "brier_score": 0.26261249999999997,
+    "naive_brier_score": 0.194775,
+    "ece": 0.24175,
+    "n": 200
+  }
+}
