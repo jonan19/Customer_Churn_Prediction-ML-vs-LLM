@@ -1,0 +1,50 @@
+{
+  "assumptions": {
+    "cost_per_call_usd": 15.0,
+    "save_rate": 0.3,
+    "retention_months": 12,
+    "avg_monthly_charge_usd": 64.0888573456352
+  },
+  "optimal_unconstrained": {
+    "k_pct": 0.76,
+    "n_contacted": 1071.0,
+    "churners_caught": 370.0,
+    "cost": 16065.0,
+    "revenue_saved": 85366.3579843861,
+    "net_value": 69301.3579843861,
+    "roi": 4.3138100208145715
+  },
+  "contact_everyone": {
+    "k_pct": 1.0,
+    "n_contacted": 1409.0,
+    "churners_caught": 374.0,
+    "cost": 21135.0,
+    "revenue_saved": 86289.23753016324,
+    "net_value": 65154.23753016324,
+    "roi": 3.082764964758138
+  },
+  "contact_nobody_net_value": 0.0,
+  "budget_constrained_model_vs_random": {
+    "top_10pct": {
+      "model_net_value": 22110.588076650107,
+      "random_net_value": 6520.047900463462,
+      "model_value_add_over_random": 15590.540176186645,
+      "model_churners_caught": 105.0,
+      "random_churners_caught_expected": 37.42654364797729
+    },
+    "top_20pct": {
+      "model_net_value": 39145.338651525904,
+      "random_net_value": 13040.095800926923,
+      "model_value_add_over_random": 26105.24285059898,
+      "model_churners_caught": 188.0,
+      "random_churners_caught_expected": 74.85308729595458
+    },
+    "top_30pct": {
+      "model_net_value": 50873.5318381831,
+      "random_net_value": 19560.143701390385,
+      "model_value_add_over_random": 31313.388136792717,
+      "model_churners_caught": 248.0,
+      "random_churners_caught_expected": 112.27963094393188
+    }
+  }
+}
